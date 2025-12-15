@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 habr_page.html
 habr_articles.*
+.json
