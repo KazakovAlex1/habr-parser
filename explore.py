@@ -28,35 +28,64 @@ def pars_of_count_pages(start_pars=1, end_pars=5):
         articles = soup.find_all('article')
 
         for article in articles:
-            title = "Не найден!"
-            href = "Не найден!"
-            author = "Не найден!"
-            time = "Не найден!"
+            title = "Не найден"
+            href = "Не найден"
+            author = "Не найден"
+            time = "Не найден"
+            level = "Не найден"
+            time_to_read = "Не найден"
+            count_reach = "Не найден"
+
             title_str = article.find('h2', class_='tm-title')
             if title_str is None:
                 print('Заголовок не найден!')
             else:
                 title = title_str.get_text(strip=True)
+
             href_str = article.find('a', class_='tm-title__link')
             if href_str is None:
                 print('Ссылка не найдена!')
             else:
                 href = 'https://habr.com' + href_str.get('href')
+
             author_str = article.find('a', class_='tm-user-info__username')
             if author_str is None:
                 print('Автор не найден!')
             else:
                 author = author_str.get_text(strip=True)
+
             time_str = article.find('time')
             if time_str is None:
                 print('Время не найдено!')
             else:
                 time = time_str.get_text(strip=True)
+
+            level_str = article.find('span', class_='tm-article-complexity__label')
+            if level_str is None:
+                print('Уровень отсутствует!')
+            else:
+                level = level_str.get_text(strip=True)
+
+            time_to_read_str = article.find('span', class_='tm-article-reading-time__label')
+            if time_to_read_str is None:
+                print('Время на прочтение отсутствует!')
+            else:
+                time_to_read = time_to_read_str.get_text(strip=True)
+            
+            count_reach_str = article.find('span', class_='tm-icon-counter__value')
+            if count_reach_str is None:
+                print('Просмотры не найдены!')
+            else:
+                count_reach = count_reach_str.getText(strip=True)
+
             all_articles_data.append(
                 {'title': title,
                  'href': href,
                  'author': author,
-                 'time': time}
+                 'data_publication': time,
+                 'level': level,
+                 'time_to_read': time_to_read,
+                 'count_reach': count_reach}
             )
     return all_articles_data
 
@@ -70,7 +99,8 @@ def print_content(articles):
         print(f'Заголовок статьи: {article['title']} \n')
         print(f'Ссылка на статью: {article['href']} \n')
         print(f'Автор статьи: {article['author']} \n')
-        print(f'Дата публикации: {article['time']}')
+        print(f'Дата публикации: {article['time']}\n')
+        print(f'Уровень статьи: {article['level']} \n')
 
 
 def save_to_json(data, filename='habr_articles.json'):
