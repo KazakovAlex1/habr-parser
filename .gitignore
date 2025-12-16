@@ -4,3 +4,4 @@ __pycache__/
 habr_page.html
 habr_articles.*
 .json
+.csv

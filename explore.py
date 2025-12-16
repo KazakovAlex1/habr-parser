@@ -1,5 +1,6 @@
 import requests
 import json
+import csv
 from bs4 import BeautifulSoup
 from time import sleep
 
@@ -60,23 +61,26 @@ def pars_of_count_pages(start_pars=1, end_pars=5):
             else:
                 time = time_str.get_text(strip=True)
 
-            level_str = article.find('span', class_='tm-article-complexity__label')
+            level_str = article.find('span',
+                                     class_='tm-article-complexity__label')
             if level_str is None:
                 print('Уровень отсутствует!')
             else:
                 level = level_str.get_text(strip=True)
 
-            time_to_read_str = article.find('span', class_='tm-article-reading-time__label')
+            time_to_read_str = article.find(
+                'span', class_='tm-article-reading-time__label')
             if time_to_read_str is None:
                 print('Время на прочтение отсутствует!')
             else:
                 time_to_read = time_to_read_str.get_text(strip=True)
-            
-            count_reach_str = article.find('span', class_='tm-icon-counter__value')
+
+            count_reach_str = article.find('span',
+                                           class_='tm-icon-counter__value')
             if count_reach_str is None:
                 print('Просмотры не найдены!')
             else:
-                count_reach = count_reach_str.getText(strip=True)
+                count_reach = count_reach_str.get_text(strip=True)
 
             all_articles_data.append(
                 {'title': title,
@@ -99,14 +103,34 @@ def print_content(articles):
         print(f'Заголовок статьи: {article['title']} \n')
         print(f'Ссылка на статью: {article['href']} \n')
         print(f'Автор статьи: {article['author']} \n')
-        print(f'Дата публикации: {article['time']}\n')
+        print(f'Дата публикации: {article['data_publication']}\n')
         print(f'Уровень статьи: {article['level']} \n')
+        print(f'Время чтения: {article['time_to_read']} \n')
+        print(f'Просмотры: {article['count_reach']} \n')
 
 
 def save_to_json(data, filename='habr_articles.json'):
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f'Данные сохранены в {filename} ({len(data)} статей)')
+    if not data:
+        print('Нечего записывать')
+        return
+    else:
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f'Данные сохранены в {filename} ({len(data)} статей)')
+
+
+def save_to_csv(data, filename='habr_articles.csv'):
+    if data is None:
+        print('Нечего записывать')
+        return
+    else:
+        field_names = data[0].keys()
+
+        with open(filename, 'w', encoding='utf-8-sig', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=field_names)
+            writer.writeheader()
+            writer.writerows(data)
+        print(f'Данные успешно сохранены в {filename} ({len(data)} статей)')
 
 
 def main():
@@ -124,10 +148,25 @@ def main():
               ' больше или равное начальной странице')
         end_input = input()
     parsing = pars_of_count_pages(int(start_input), int(end_input))
-    if parsing:
+
+    print('Хотите сохранить сразу в csv и json?(д/н, y/n)')
+    user_input = input().lower()
+    while user_input not in ['д', 'n', 'y', 'н']:
+        print('Пожалуйста введите д/н, y/n')
+        user_input = input().lower()
+    if user_input in ['д', 'y']:
+        save_to_csv(parsing)
         save_to_json(parsing)
     else:
-        print('Не удалось собрать статьи(')
+        print('Каким образом сохранить файл?(введите json/csv)')
+        user_input = input().lower()
+        while user_input not in ['csv', 'json']:
+            print('Пожалуйста выберите файл csv или json')
+            user_input = input().lower()
+        if user_input == 'csv':
+            save_to_csv(parsing)
+        else:
+            save_to_json(parsing)
 
 
 if __name__ == '__main__':
