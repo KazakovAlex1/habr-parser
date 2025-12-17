@@ -1,4 +1,5 @@
 import requests
+import collections
 import json
 import csv
 from bs4 import BeautifulSoup
@@ -38,48 +39,34 @@ def pars_of_count_pages(start_pars=1, end_pars=5):
             count_reach = "Не найден"
 
             title_str = article.find('h2', class_='tm-title')
-            if title_str is None:
-                print('Заголовок не найден!')
-            else:
+            if title_str:
                 title = title_str.get_text(strip=True)
 
             href_str = article.find('a', class_='tm-title__link')
-            if href_str is None:
-                print('Ссылка не найдена!')
-            else:
+            if href_str:
                 href = 'https://habr.com' + href_str.get('href')
 
             author_str = article.find('a', class_='tm-user-info__username')
-            if author_str is None:
-                print('Автор не найден!')
-            else:
+            if author_str:
                 author = author_str.get_text(strip=True)
 
             time_str = article.find('time')
-            if time_str is None:
-                print('Время не найдено!')
-            else:
+            if time_str:
                 time = time_str.get_text(strip=True)
 
             level_str = article.find('span',
                                      class_='tm-article-complexity__label')
-            if level_str is None:
-                print('Уровень отсутствует!')
-            else:
+            if level_str:
                 level = level_str.get_text(strip=True)
 
             time_to_read_str = article.find(
                 'span', class_='tm-article-reading-time__label')
-            if time_to_read_str is None:
-                print('Время на прочтение отсутствует!')
-            else:
+            if time_to_read_str:
                 time_to_read = time_to_read_str.get_text(strip=True)
 
             count_reach_str = article.find('span',
                                            class_='tm-icon-counter__value')
-            if count_reach_str is None:
-                print('Просмотры не найдены!')
-            else:
+            if count_reach_str:
                 count_reach = count_reach_str.get_text(strip=True)
 
             all_articles_data.append(
@@ -92,6 +79,29 @@ def pars_of_count_pages(start_pars=1, end_pars=5):
                  'count_reach': count_reach}
             )
     return all_articles_data
+
+
+def create_list_authors(data):
+    list_authors = []
+    for article in data:
+        if article['author'] != 'Не найден':
+            list_authors.append(article['author'])
+    return list_authors
+
+
+def return_level(data):
+    list_levels = []
+    for article in data:
+        list_levels.append(article['level'])
+    return list_levels
+
+
+def analyze_level(list):
+    count_levels = collections.Counter(list)
+    print(f'Cложных статей: {count_levels.get('Сложный', 0)}')
+    print(f'Средних статей: {count_levels.get('Средний', 0)}')
+    print(f'Простых статей: {count_levels.get('Простой', 0)}')
+    print(f'Простых статей: {count_levels.get('Не найден', 0)}')
 
 
 def print_content(articles):
@@ -167,6 +177,25 @@ def main():
             save_to_csv(parsing)
         else:
             save_to_json(parsing)
+    print('Хотите дополнительный анализ статей?(д/н, y/n)')
+    user_input_dop = input().lower()
+    while user_input_dop not in ['д', 'n', 'y', 'н']:
+        print('Пожалуйста введите д/н, y/n')
+        user_input_dop = input().lower()
+    if user_input_dop in ['д', 'y']:
+        authors = create_list_authors(parsing)
+        c = collections.Counter(authors)
+        top_5 = c.most_common(5)
+        print('ТОП 5 авторов по опубликованым статьям:')
+        for i, (name, count) in enumerate(top_5, 1):
+            print(f'{i}. {name}: {count} статей.')
+
+        list_levels = return_level(parsing)
+        if list_levels:
+            print()
+            analyze_level(list_levels)
+    else:
+        return
 
 
 if __name__ == '__main__':
