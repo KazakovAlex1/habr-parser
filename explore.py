@@ -1,7 +1,7 @@
 import requests
+import xlsxwriter
 import collections
 import json
-import csv
 from bs4 import BeautifulSoup
 from time import sleep
 
@@ -101,7 +101,7 @@ def analyze_level(list):
     print(f'Cложных статей: {count_levels.get('Сложный', 0)}')
     print(f'Средних статей: {count_levels.get('Средний', 0)}')
     print(f'Простых статей: {count_levels.get('Простой', 0)}')
-    print(f'Простых статей: {count_levels.get('Не найден', 0)}')
+    print(f'Статьи без уровня: {count_levels.get('Не найден', 0)}')
 
 
 def print_content(articles):
@@ -129,18 +129,41 @@ def save_to_json(data, filename='habr_articles.json'):
         print(f'Данные сохранены в {filename} ({len(data)} статей)')
 
 
-def save_to_csv(data, filename='habr_articles.csv'):
-    if data is None:
-        print('Нечего записывать')
-        return
-    else:
-        field_names = data[0].keys()
+def xlsx_writer(data):
+    book = xlsxwriter.Workbook('Data.xlsx')
+    page = book.add_worksheet('Статьи с Хабр')
 
-        with open(filename, 'w', encoding='utf-8-sig', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=field_names)
-            writer.writeheader()
-            writer.writerows(data)
-        print(f'Данные успешно сохранены в {filename} ({len(data)} статей)')
+    row = 0
+
+    page.set_column('A:A', 100)
+    page.set_column('B:B', 70)
+    page.set_column('C:C', 20)
+    page.set_column('D:D', 30)
+    page.set_column('E:E', 10)
+    page.set_column('F:F', 10)
+    page.set_column('G:G', 10)
+
+    headers = ['Заголовок', 'Ссылка', 'Автор', 'Дата публикации',
+               'Уровень', 'Время прочтения', 'Просмотры']
+
+    row = 0
+    for column, header in enumerate(headers):
+        page.write(row, column, header)
+
+    row += 1
+
+    for article in data:
+        page.write(row, 0, article.get('title', ''))
+        page.write(row, 1, article.get('href', ''))
+        page.write(row, 2, article.get('author', ''))
+        page.write(row, 3, article.get('data_publication', ''))
+        page.write(row, 4, article.get('level', ''))
+        page.write(row, 5, article.get('time_to_read', ''))
+        page.write(row, 6, article.get('count_reach', ''))
+        row += 1
+
+    book.close()
+    print(f'Данные сохранены в Data.xlsx ({len(data)} статей)')
 
 
 def main():
@@ -159,22 +182,22 @@ def main():
         end_input = input()
     parsing = pars_of_count_pages(int(start_input), int(end_input))
 
-    print('Хотите сохранить сразу в csv и json?(д/н, y/n)')
+    print('Хотите сохранить сразу в xls и json?(д/н, y/n)')
     user_input = input().lower()
     while user_input not in ['д', 'n', 'y', 'н']:
         print('Пожалуйста введите д/н, y/n')
         user_input = input().lower()
     if user_input in ['д', 'y']:
-        save_to_csv(parsing)
+        xlsx_writer(parsing)
         save_to_json(parsing)
     else:
-        print('Каким образом сохранить файл?(введите json/csv)')
+        print('Каким образом сохранить файл?(введите json/xls)')
         user_input = input().lower()
-        while user_input not in ['csv', 'json']:
-            print('Пожалуйста выберите файл csv или json')
+        while user_input not in ['xls', 'json']:
+            print('Пожалуйста выберите файл xls или json')
             user_input = input().lower()
-        if user_input == 'csv':
-            save_to_csv(parsing)
+        if user_input == 'xls':
+            xlsx_writer(parsing)
         else:
             save_to_json(parsing)
     print('Хотите дополнительный анализ статей?(д/н, y/n)')
